@@ -28,7 +28,12 @@ ShowNodes() {
   Nodes=$(bspc query -N -n .hidden -n .tiled -d "$1")
 
   for node in $Nodes; do
-    bspc node "$node" -g hidden=off
+    # Turns out, running bspswallow and this script at the same time causes
+    # some annoying bug (node removal also un-hides swallowed window).
+    # So, first check if bspswallow is running, and that the window ID is
+    # that of a swallowed. AND THEN carry on with un-hiding it (if it
+    # is not a swallowed window).
+    pgrep bspswallow && grep "$node$" /tmp/swallowids || bspc node "$node" -g hidden=off
   done
 }
 
