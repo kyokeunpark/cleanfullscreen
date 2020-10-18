@@ -13,8 +13,9 @@ ShowBar() {
 }
 
 HideNodes() {
+  FOCUSED=$(bspc query -N -n .focused -d "$Desktop")
   for node in $1; do
-    bspc node "$node" -g hidden=on
+    [ "$FOCUSED = $node" ] || bspc node "$node" -g hidden=on
   done
 }
 
@@ -24,12 +25,29 @@ HideTiled() {
 }
 
 ShowNodes() {
-  Nodes=$(bspc query -N -n .hidden -d "$1")
+  Nodes=$(bspc query -N -n .hidden -n .tiled -d "$1")
 
   for node in $Nodes; do
     bspc node "$node" -g hidden=off
   done
 }
+
+bspc subscribe desktop_layout | while read -r Event Monitor Desktop State
+do
+  PrimaryMonitor=$(bspc query -N -m primary)
+  if [ "$State" = "monocle" ]; then
+    if [ "$PrimaryMonitor" = "$Monitor" ]; then
+      HideBar
+    fi
+    HideTiled "$Desktop"
+  else
+    if [ "$PrimaryMonitor" = "$Monitor" ]; then
+      ShowBar
+    fi
+    ShowNodes "$Desktop"
+  fi
+
+done &
 
 bspc subscribe node_state | while read -r Event Monitor Desktop Node State Active
 do
